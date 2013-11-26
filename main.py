@@ -9,3 +9,6 @@ for thread in root:
         from_who = email[1]
         to_whom = email[2]
         email_subject = email[3]
+        email_text = 
+        
+        for text in email.findall('.//Text/Sent'):
