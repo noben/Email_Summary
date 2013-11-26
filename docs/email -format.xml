@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<thread>
+    <email id="0">
+		<subject><subject/>
+		<from><from/>
+		<to><to/>
+		<cc><cc/>
+		<SATag><!-- speech act tag:request,propose,commit,deliver,meet,data-->
+			<request/>
+			<deliver/>
+		<SATAG/>	
+		<text>
+			<sentence id="1">
+				<length>33<length/>
+				<similarity>0.2<similarity/>
+			<sentence/>
+		<text/>
+	<email/>
+	<email id="1">
+		<subject><subject/>
+		<from><from/>
+		<to><to/>
+		<cc><cc/>	
+		<text>
+			<sentence id="1">
+				<length>22<length/>
+				<similarity>0.15<similarity/>
+			<sentence/>
+		<text/>
+	<email/>
+	<email id="2"><email/>
+	<email id="3"><email/>
+	<email id="4"><email/>
+	<email id="5"><email/>
+</thread>
