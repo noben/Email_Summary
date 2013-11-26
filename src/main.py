@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import sqlite3
 import os
 import subprocess
+from sentiment.analysis import sentimentAnalysis
 
 # Read XML files and parse it into memory
 bc3_corpus_xml_doc = ET.parse('../bc3/corpus.xml')
@@ -33,7 +34,7 @@ def load_bc3_corpus():
                  to_whom,
                  cc)''')
     db_cursor.execute('''CREATE TABLE sentence
-                 (id,email_id,text,length,similarity,extracted,sa_tag)''')
+                 (id,email_id,text,length,similarity,extracted,sa_tag,sentiment)''')
 #    db_cursor.execute('''CREATE TABLE sentence_summary
 #                 (id,text,)''')
     
@@ -57,8 +58,10 @@ def load_bc3_corpus():
             
             sentence_no = 0
             for sentence_node in email_node.findall('.//Text/Sent'):
+                sentence_text = sentence_node.text
+                sentiment_score = sentimentAnalysis(sentence_text)
                 #Insert a row of data in sentence_node table
-                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?)", (sentence_no, email_no, sentence_node.text, len(sentence_node.text), get_subject_similarity(sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), ""))
+                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?,?)", (sentence_no, email_no, sentence_text, len(sentence_text), get_subject_similarity(sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), "",sentiment_score))
                 sentence_no = sentence_no + 1
                 
             email_no = email_no + 1
@@ -111,8 +114,10 @@ def load_generated_speech_act_tag():
     subprocess.call(['java', '-jar', '../libs/speech_act.jar', '../bc3/bc3.db'])
     
 def main():
+    print "Loading BC3 Corpus.....It may take couple of seconds"
     load_bc3_corpus()
 ##    load_bc3_summary()
+    print "Loading generated speech act tag....."
     load_generated_speech_act_tag()
     
 if __name__ == "__main__":
