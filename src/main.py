@@ -26,15 +26,15 @@ def load_bc3_corpus():
     # Get database cursor
     db_cursor = conn.cursor()
     # Create table
-    db_cursor.execute('''CREATE TABLE thread
+    db_cursor.execute('''CREATE TABLE IF NOT EXISTS thread
                  (id,subject)''')
-    db_cursor.execute('''CREATE TABLE email
+    db_cursor.execute('''CREATE TABLE IF NOT EXISTS email
                  (id,thread_id,subject,
                  from_who,
                  to_whom,
                  cc)''')
-    db_cursor.execute('''CREATE TABLE sentence
-                 (id,email_id,text,length,similarity,extracted,sa_tag,sentiment)''')
+    db_cursor.execute('''CREATE TABLE IF NOT EXISTS sentence
+                 (id,email_id,thread_id,text,length,similarity,extracted,sa_tag,sentiment)''')
 #    db_cursor.execute('''CREATE TABLE sentence_summary
 #                 (id,text,)''')
     
@@ -61,7 +61,7 @@ def load_bc3_corpus():
                 sentence_text = sentence_node.text
                 sentiment_score = sentimentAnalysis(sentence_text)
                 #Insert a row of data in sentence_node table
-                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?,?)", (sentence_no, email_no, sentence_text, len(sentence_text), get_subject_similarity(sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), "",sentiment_score))
+                db_cursor.execute("INSERT INTO sentence VALUES (?,?,?,?,?,?,?,?,?)", (sentence_no, email_no, thread_list_no, sentence_text, len(sentence_text), get_subject_similarity(sentence_node.text), is_sentence_extracted(thread_list_no, email_no, sentence_no), "", sentiment_score))
                 sentence_no = sentence_no + 1
                 
             email_no = email_no + 1
@@ -73,7 +73,7 @@ def load_bc3_corpus():
     conn.close()
     
     
-def get_thread_node_by_list_no(thread_list_no):
+def get_thread_node_by_list_no_from_xml(thread_list_no):
     # Get the root node in the xml file
     xml_root_node = bc3_annotation_xml_doc.getroot()
     # Get the unique thread_node through thread_list_no
@@ -86,7 +86,7 @@ if the sentence has been selected as one of the extractions by looking at annota
 @author: Kevin Zhao
 '''
 def is_sentence_extracted(thread_list_no, email_id, sentence_id):
-    thread_node = get_thread_node_by_list_no(thread_list_no)
+    thread_node = get_thread_node_by_list_no_from_xml(thread_list_no)
     # construct sentence_id in the form of 1.2,1.3,1.4.....
     sentence_unque_id = str(email_id) + "." + str(sentence_id)
     # Find all the sent_node under the thread_node whose id is sentence_unque_id
@@ -100,12 +100,67 @@ def is_sentence_extracted(thread_list_no, email_id, sentence_id):
 #    # Get database cursor
 #    db_cursor = conn.cursor()
 #    
-#    thread_node = get_thread_node_by_list_no(thread_list_no)
+#    thread_node = get_thread_node_by_list_no_from_xml(thread_list_no)
 #    # Find all the sent_node under the thread_node whose id is sentence_unque_id
 #    for sent_node in thread_node.findall('.//annotation/summary/sent'):
 #        # Insert a row of data in summary table
 #        db_cursor.execute("INSERT INTO summary VALUES (?,?)", (thread_no, subject))
 
+def feature_extraction():
+    # Load database file
+    conn = sqlite3.connect('../bc3/bc3.db')
+    # Get database cursor
+    db_cursor = conn.cursor()
+    # Create table
+    db_cursor.execute('''CREATE TABLE IF NOT EXISTS feature 
+                 (sentence_id,email_id,thread_id,extracted ,f_length ,
+                 f_sentiment ,f_thread_line_number ,f_relative_thread_line_num,
+                 f_centroid_similarity,f_local_centroid_similarity,f_tfidf_sum,
+                 f_tfidf_avg,f_email_number,f_relative_email_number,f_subject_similarity,
+                 f_reply_number,f_recipients_number,f_sa_tag)''')
+    
+    #get data from sentence table for feature extraction
+    sentence_id = ""
+    email_id = ""
+    thread_id = ""
+    sentence_text = ""
+    f_sentence_length = ""
+    f_sentence_subject_similarity = ""
+    sentence_extracted = ""
+    f_sentence_sa_tag = ""
+    f_sentence_sentiment = ""
+    
+    db_cursor = conn.execute("SELECT *  from sentence")
+    db_insert_cursor= conn.cursor()
+    for row in db_cursor:
+        sentence_id = row[0]
+        email_id = row[1]
+        thread_id = row[2]
+        sentence_text = row[3]
+        f_sentence_length = row[4]
+        f_sentence_subject_similarity = row[5]
+        sentence_extracted = row[6]
+        f_sentence_sa_tag = row[7]
+        f_sentence_sentiment = row[8]
+        #TODO : features to be extracted
+        f_sentence_thread_line_number = "" #TODO:
+        f_sentence_relative_thread_line_num = "" #TODO:sentenceid/sum(all the sentences in a thread)
+        f_sentence_centroid_similarity=""
+        f_sentence_local_centroid_similarity=""
+        f_sentence_tfidf_sum=""
+        f_sentence_tfidf_avg=""
+        f_sentence_email_number=""
+        f_sentence_relative_email_number=""
+        f_sentence_reply_number=""
+        f_sentence_recipients_number=""
+        #insert feature data into database
+        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,f_sentence_sa_tag))
+   
+    # Save (commit) the changes
+    conn.commit()
+    
+    conn.close()
+   
 '''
 Run Speech act on email text and update sa_tag column in sentence table
 @author: Kevin Zhao
@@ -114,11 +169,14 @@ def load_generated_speech_act_tag():
     subprocess.call(['java', '-jar', '../libs/speech_act.jar', '../bc3/bc3.db'])
     
 def main():
+    print "1.Pre-processing"
     print "Loading BC3 Corpus.....It may take couple of seconds"
-    load_bc3_corpus()
-##    load_bc3_summary()
+#    load_bc3_corpus()
     print "Loading generated speech act tag....."
-    load_generated_speech_act_tag()
+#    load_generated_speech_act_tag()
+    
+    print "2.Feature extraction..."
+    feature_extraction()
     
 if __name__ == "__main__":
     main()

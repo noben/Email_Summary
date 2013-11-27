@@ -13,3 +13,8 @@ for row in c.execute('SELECT * FROM email'):
 print "========================================sentence============================"        
 for row in c.execute('SELECT * FROM sentence'):
         print row
+print "========================================feature============================"        
+for row in c.execute('SELECT * FROM feature'):
+        print row        
+        
+        
