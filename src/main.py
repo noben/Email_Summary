@@ -48,7 +48,7 @@ def load_bc3_corpus():
         # Insert a row of data in thread_node table
         db_cursor.execute("INSERT INTO thread VALUES (?,?)", (thread_list_no, subject))
         #iterate through all the "DOC" tags under the "thread_node" tags
-        email_no = 0
+        email_no = 1
         for email_node in thread_node.findall('.//DOC'):
             from_who = email_node[1].text
             to_whom = email_node[2].text
@@ -67,7 +67,7 @@ def load_bc3_corpus():
             #Insert a row of data in email_node table
             db_cursor.execute("INSERT INTO email VALUES (?,?,?,?,?,?,?)", (email_no, thread_list_no, email_subject, from_who, to_whom, "",number_of_replies))
             
-            sentence_no = 0
+            sentence_no = 1
             for sentence_node in email_node.findall('.//Text/Sent'):
                 sentence_text = sentence_node.text
                 sentiment_score = sentimentAnalysis(sentence_text)
