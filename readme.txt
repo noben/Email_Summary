@@ -4,16 +4,10 @@ Email_Summary
 Email Summary NLP project @ NYU
 
 
-##########TODO##########
-@Lu Ming Nie:
-Could You please finish feature extraction part? 
-You need to start from Line 146 at main.py
-
-@Chi Chen:
-The output of our feature-extraction module will be in the "feature" table at sqlite database.
-Please scroll down this readme file to the very end and you will find feature table structure.
-
-
+##########Note##########
+(1)If you have changed the database table structure ,you have to run load_bc3_corpus() in main() at main.py
+(2)If you don't need speech act tag for now,just comment load_generated_speech_act_tag() in main() at main.py. load_generated_speech_act_tag() usually takes up to 3 minutes to finish
+	
 
 ##########Functionality##########
 (1)Import BC3 corpus xml files into sqlite database
@@ -83,11 +77,11 @@ primary key: id
 
 * email
 primary key: id +thread_id
-----------------------------------------------------
-|id    |thread_id |subject |from_who |to_whom |cc  |
-----------------------------------------------------
-|int   |int       |char    |char     |char    |char|
-----------------------------------------------------
+----------------------------------------------------------------
+|id    |thread_id |subject |from_who |to_whom |cc  |num_replies|
+----------------------------------------------------------------
+|int   |int       |char    |char     |char    |char|int		   |
+----------------------------------------------------------------
 
 * sentence 
 primary key: id+email_id+thread_id

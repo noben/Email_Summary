@@ -32,7 +32,7 @@ def load_bc3_corpus():
                  (id,thread_id,subject,
                  from_who,
                  to_whom,
-                 cc)''')
+                 cc,num_replies)''')
     db_cursor.execute('''CREATE TABLE IF NOT EXISTS sentence
                  (id,email_id,thread_id,text,length,similarity,extracted,sa_tag,sentiment)''')
 #    db_cursor.execute('''CREATE TABLE sentence_summary
@@ -53,8 +53,19 @@ def load_bc3_corpus():
             from_who = email_node[1].text
             to_whom = email_node[2].text
             email_subject = email_node[3].text
+            number_of_replies = 0
+            # get number of replies
+            for email_node_for_num_replies in thread_node.findall('.//DOC'):
+                to_whom_for_num_replies = email_node_for_num_replies[2].text
+                if to_whom_for_num_replies is None:
+                    continue
+                try:
+                    if from_who in to_whom_for_num_replies:
+                        number_of_replies=number_of_replies+1;
+                except TypeError as e:
+                        print e
             #Insert a row of data in email_node table
-            db_cursor.execute("INSERT INTO email VALUES (?,?,?,?,?,?)", (email_no, thread_list_no, email_subject, from_who, to_whom, ""))
+            db_cursor.execute("INSERT INTO email VALUES (?,?,?,?,?,?,?)", (email_no, thread_list_no, email_subject, from_who, to_whom, "",number_of_replies))
             
             sentence_no = 0
             for sentence_node in email_node.findall('.//Text/Sent'):
@@ -110,9 +121,9 @@ def feature_extraction():
     # Load database file
     conn = sqlite3.connect('../bc3/bc3.db')
     # Get database cursor
-    db_cursor = conn.cursor()
+    sentence_db_cursor = conn.cursor()
     # Create table
-    db_cursor.execute('''CREATE TABLE IF NOT EXISTS feature 
+    sentence_db_cursor.execute('''CREATE TABLE IF NOT EXISTS feature 
                  (sentence_id,email_id,thread_id,extracted ,f_length ,
                  f_sentiment ,f_thread_line_number ,f_relative_thread_line_num,
                  f_centroid_similarity,f_local_centroid_similarity,f_tfidf_sum,
@@ -130,9 +141,10 @@ def feature_extraction():
     f_sentence_sa_tag = ""
     f_sentence_sentiment = ""
     
-    db_cursor = conn.execute("SELECT *  from sentence")
-    db_insert_cursor= conn.cursor()
-    for row in db_cursor:
+    sentence_db_cursor = conn.execute("SELECT *  from sentence")
+    
+    feature_db_insert_cursor= conn.cursor()
+    for row in sentence_db_cursor:
         sentence_id = row[0]
         email_id = row[1]
         thread_id = row[2]
@@ -151,15 +163,21 @@ def feature_extraction():
         f_sentence_tfidf_avg=""
         f_sentence_email_number=""
         f_sentence_relative_email_number=""
-        f_sentence_reply_number=""
+        
+        #get number of replies
+        email_db_cursor = conn.execute("SELECT num_replies from email where id =? and thread_id = ?",(email_id,thread_id))
+        for row_in_email_table in email_db_cursor:
+            f_sentence_reply_number=row_in_email_table[0]
+        #get number of recipients
         f_sentence_recipients_number=""
         #insert feature data into database
-        db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,f_sentence_sa_tag))
+        feature_db_insert_cursor.execute("INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (sentence_id,email_id,thread_id,sentence_extracted,f_sentence_length,f_sentence_sentiment,f_sentence_thread_line_number,f_sentence_relative_thread_line_num,f_sentence_centroid_similarity,f_sentence_local_centroid_similarity,f_sentence_tfidf_sum,f_sentence_tfidf_avg,f_sentence_email_number,f_sentence_relative_email_number,f_sentence_subject_similarity,f_sentence_reply_number,f_sentence_recipients_number,f_sentence_sa_tag))
    
     # Save (commit) the changes
     conn.commit()
     
     conn.close()
+   
    
 '''
 Run Speech act on email text and update sa_tag column in sentence table
@@ -177,6 +195,8 @@ def main():
     
     print "2.Feature extraction..."
     feature_extraction()
+    
+    print "Done!"
     
 if __name__ == "__main__":
     main()
