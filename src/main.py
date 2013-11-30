@@ -7,7 +7,7 @@ from sentiment.analysis import sentimentAnalysis
 # Read XML files and parse it into memory
 bc3_corpus_xml_doc = ET.parse('../bc3/corpus.xml')
 bc3_annotation_xml_doc = ET.parse('../bc3/annotation.xml')
-    
+     
 '''
 TODO:give a similarity score for each sentence by comparing it with the email subject 
 @author: Kevin Zhao
