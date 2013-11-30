@@ -3,7 +3,11 @@ Email_Summary
 
 Email Summary NLP project @ NYU
 
-
+#TODO:
+	(1)feature extraction
+		f_centroid_similarity
+		f_local_centroid_similarity
+		f_subject_similarity
 #Note
 	(1)If you have changed the database table structure ,you have to run load_bc3_corpus() in main() at main.py
 	(2)If you don't need speech act tag for now,just comment load_generated_speech_act_tag() in main() at main.py. load_generated_speech_act_tag() usually takes up to 3 minutes to finish
